@@ -23,11 +23,16 @@
 
 #include "configuration.h"
 #include "rom/rtc.h"
-#include <TinyGPS++.h>
+#include <TinyGPSPlus.h>
 #include <Wire.h>
+#include "DHT.h"
+
 
 #include "axp20x.h"
 AXP20X_Class axp;
+
+DHT dht(DHTPIN, DHTTYPE);
+
 bool pmu_irq = false;
 String baChStatus = "No charging";
 
@@ -36,13 +41,7 @@ bool axp192_found = false;
 
 bool packetSent, packetQueued;
 
-#if defined(PAYLOAD_USE_FULL)
-    // includes number of satellites and accuracy
-    static uint8_t txBuffer[10];
-#elif defined(PAYLOAD_USE_CAYENNE)
-    // CAYENNE DF
-    static uint8_t txBuffer[11] = {0x03, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-#endif
+static uint8_t txBuffer[10];
 
 // deep sleep support
 RTC_DATA_ATTR int bootCount = 0;
@@ -52,7 +51,133 @@ esp_sleep_source_t wakeCause;  // the reason we booted this time
 // Application
 // -----------------------------------------------------------------------------
 
-void buildPacket(uint8_t txBuffer[]);  // needed for platformio
+//void buildPacket(uint8_t txBuffer[]);  // needed for platformio
+
+void buildPacket(uint8_t txBuffer[10])
+/*
+ * Packet structure is as follows
+ * Bits 0..23 -> Latitude
+ * Bits 24..47 -> Longitude
+ * Bit 48 -> GPS Valid
+ * Bits 49..55 -> Humidity
+ * Bits 56..61 -> Temperature
+ * Bit 62 -> Batery ON
+ * Bit 63 -> Switch ON
+ * Bits 64..71 -> Voltage battery
+ * Bits 72..79 -> Not used
+ */
+{
+
+    uint32_t LatitudeBinary;
+    uint32_t LongitudeBinary;
+    uint8_t hdopGps;
+    uint8_t sats;
+    uint8_t switch_status;
+    uint8_t gpsValid;
+
+    uint8_t humidityBinary;
+    uint8_t tempBinary;
+    float humidity;
+    float temp;
+    float lowesttemp = -5;
+
+    uint16_t vsens1 = 0;
+    uint16_t vsens2 = 0;
+    float vOUT1;
+    float vOUT2;
+    float vIN1;
+    float vIN2;
+    uint8_t battBinary;
+    uint8_t battOn;
+    
+    char t[32]; // used to sprintf for Serial output
+
+    // GPS
+    LatitudeBinary = ((gps_latitude() + 90) / 180.0) * 16777215;
+    LongitudeBinary = ((gps_longitude() + 180) / 360.0) * 16777215;
+    switch_status = digitalRead(SWITCH_PIN);
+    if (gps_hdop() < 50.0) gpsValid = 1; else gpsValid = 0;
+
+    // DHT22
+    humidity = dht.readHumidity();
+    humidityBinary = (uint8_t)round(humidity);
+    temp = dht.readTemperature();
+    tempBinary = (uint8_t)(round(temp)-lowesttemp);
+
+    // BATTERY VOLTAGE SENSORS
+
+    // First calculate received voltages for both sensors
+    for (uint8_t i = 0; i < 3; i++) {
+       vsens1 = vsens1 + analogRead(VSENS1PIN);
+    }
+    vOUT1 = (vsens1 * 1.1) / 4095; 
+    // Formula should be: (vsens1 * 3.3) / (4095 * 3)
+    // vsens1 should be divided by 3 to get average value
+    
+    for (uint8_t i = 0; i < 3; i++) {
+       vsens2 = vsens2 + analogRead(VSENS2PIN);
+    }
+    vOUT2 = (vsens2 * 1.1) / 4095; 
+
+    // Calculate real voltages
+    vIN1 = vOUT1 / (VSENS_R2/(VSENS_R1+VSENS_R2));
+    vIN2 = vOUT2 / (VSENS_R2/(VSENS_R1+VSENS_R2));
+
+    //If vIN2 is below threshold we consider battery is OFF.
+    if (vIN2 < BATT_OFF_THRESHOLD ) {
+      battOn = 0;
+    } else {
+      battOn = 1;
+    }
+
+    //Battery voltage binary
+    battBinary = uint8_t(vIN1 * 10);
+
+    // DEBUG
+    sprintf(t, "Valid: %d", gpsValid);
+    Serial.println(t);
+    sprintf(t, "Lat: %f", gps_latitude());
+    Serial.println(t);
+    sprintf(t, "Lng: %f", gps_longitude());
+    Serial.println(t);
+    sprintf(t, "Switch Status: %d", switch_status);
+    Serial.println(t);
+    sprintf(t, "Humidity Binary: %d", humidityBinary);
+    Serial.println(t);    
+    sprintf(t, "Humidity: %f", humidity);
+    Serial.println(t);
+    sprintf(t, "Temperature Binary: %d", tempBinary);
+    Serial.println(t);  
+    sprintf(t, "Temperature: %f", temp);
+    Serial.println(t);
+    sprintf(t, "Voltage sensor 1 IN : %f",  vIN1);
+    Serial.println(t);    
+    sprintf(t, "Voltage sensor 2 IN : %f",  vIN2);
+    Serial.println(t);  
+    sprintf(t, "Batt Binary: %i", battBinary);
+    Serial.println(t);  
+    sprintf(t, "Batt On: %i", battOn);
+    Serial.println(t);
+
+    uint8_t txbfdbg = ((gpsValid<<7) & 0x80) | (humidityBinary & 0x7F);
+    Serial.printf("TX BUFF 6: %i\n", txbfdbg);
+    txbfdbg = ((tempBinary<<2) & 0xFC) | ((battOn << 1) & 0x02) | ((switch_status) & 0x01) ;
+    Serial.printf("TX BUFF 7: %i\n", txbfdbg);
+    
+    // PACKET CREATION
+    txBuffer[0] = ( LatitudeBinary >> 16 ) & 0xFF;
+    txBuffer[1] = ( LatitudeBinary >> 8 ) & 0xFF;
+    txBuffer[2] = LatitudeBinary & 0xFF;
+    txBuffer[3] = ( LongitudeBinary >> 16 ) & 0xFF;
+    txBuffer[4] = ( LongitudeBinary >> 8 ) & 0xFF;
+    txBuffer[5] = LongitudeBinary & 0xFF;
+    txBuffer[6] = ((gpsValid<<7) & 0x80) | (humidityBinary & 0x7F);
+    txBuffer[7] = ((tempBinary<<2) & 0xFC) | ((battOn << 1) & 0x02) | ((switch_status) & 0x01) ;
+    txBuffer[8] = battBinary;
+    txBuffer[9] = 0x6A;
+    
+}
+
 
 /**
  * If we have a valid position send it to the server.
@@ -60,31 +185,35 @@ void buildPacket(uint8_t txBuffer[]);  // needed for platformio
  */
 bool trySend() {
     packetSent = false;
-    // We also wait for altitude being not exactly zero, because the GPS chip generates a bogus 0 alt report when first powered on
-    if (0 < gps_hdop() && gps_hdop() < 50 && gps_latitude() != 0 && gps_longitude() != 0 && gps_altitude() != 0) {
-        char buffer[40];
-        snprintf(buffer, sizeof(buffer), "Latitude: %10.6f\n", gps_latitude());
-        screen_print(buffer);
-        snprintf(buffer, sizeof(buffer), "Longitude: %10.6f\n", gps_longitude());
-        screen_print(buffer);
-        snprintf(buffer, sizeof(buffer), "Error: %4.2fm\n", gps_hdop());
-        screen_print(buffer);
-
-        buildPacket(txBuffer);
-
-    #if LORAWAN_CONFIRMED_EVERY > 0
+    char buffer[40];
+    
+    // Check if we send GPS data, only switch data, or both
+    if (isGPSReady()){
+      Serial.println("Gps wait done");
+      snprintf(buffer, sizeof(buffer), "Latitude: %10.6f\n", gps_latitude());
+      screen_print(buffer);
+      snprintf(buffer, sizeof(buffer), "Longitude: %10.6f\n", gps_longitude());
+      screen_print(buffer);
+      snprintf(buffer, sizeof(buffer), "Error: %4.2fm\n", gps_hdop());
+      screen_print(buffer);
+      
+      #if LORAWAN_CONFIRMED_EVERY > 0
         bool confirmed = (ttn_get_count() % LORAWAN_CONFIRMED_EVERY == 0);
         if (confirmed){ Serial.println("confirmation enabled"); }
-    #else
+      #else
         bool confirmed = false;
-    #endif
-
-    packetQueued = true;
-    ttn_send(txBuffer, sizeof(txBuffer), LORAWAN_PORT, confirmed);
-    return true;
-    }
-    else {
-        return false;
+      #endif
+    
+      screen_print(buffer);       
+      
+      buildPacket(txBuffer);
+      packetQueued = true;
+      ttn_send(txBuffer, sizeof(txBuffer), LORAWAN_PORT, confirmed);
+      
+      return true;
+    } else {
+      // Inputs are not ready. Not sending anything yet
+      return false;
     }
 }
 
@@ -258,7 +387,6 @@ void axp192Init() {
         Serial.printf("DCDC3: %s\n", axp.isDCDC3Enable() ? "ENABLE" : "DISABLE");
         Serial.printf("Exten: %s\n", axp.isExtenEnable() ? "ENABLE" : "DISABLE");
         Serial.println("----------------------------------------");
-
         axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);  // LORA radio
         axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);  // GPS main power
         axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
@@ -285,6 +413,7 @@ void axp192Init() {
         if (axp.isChargeing()) {
             baChStatus = "Charging";
         }
+            
     } else {
         Serial.println("AXP192 not found");
     }
@@ -324,8 +453,11 @@ void setup()
     // Buttons & LED
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
+    dht.begin();
+
     #ifdef LED_PIN
         pinMode(LED_PIN, OUTPUT);
+        digitalWrite(LED_PIN, HIGH);
     #endif
 
     // Hello
@@ -367,6 +499,9 @@ void setup()
         ttn_join();
         ttn_adr(LORAWAN_ADR);
     }
+
+    pinMode(SWITCH_PIN, INPUT);
+
 }
 
 void loop() {
@@ -379,9 +514,9 @@ void loop() {
         sleep();
     }
 
-    // if user presses button for more than 3 secs, discard our network prefs and reboot (FIXME, use a debounce lib instead of this boilerplate)
     static bool wasPressed = false;
-    static uint32_t minPressMs;  // what tick should we call this press long enough
+    static uint32_t minPressMs;     
+    // if user presses button for more than 3 secs, discard our network prefs and reboot (FIXME, use a debounce lib instead of this boilerplate)
     if (!digitalRead(BUTTON_PIN)) {
         if (!wasPressed) {
             // just started a new press
@@ -408,10 +543,20 @@ void loop() {
         }
     }
 
-    // Send every SEND_INTERVAL millis
+    /* We will always send a message just after we get valid inputs
+     * (refer to functions isGPSReady() and isSwitchReadReady()) 
+     * so we only need to put board to sleep after packetSent is true.
+     * We send a message after SEND_INTERVAL millis, even if we don't
+     * have valid GPS data
+     */
+    
     static uint32_t last = 0;
     static bool first = true;
+    
     if (0 == last || millis() - last > SEND_INTERVAL) {
+    // we are on SEND_INTERVAL. We check if inputs are ready.
+    // if they are we send data via lora and go to sleep at next loop() iteration
+    // if they are not simply pass
         if (trySend()) {
             last = millis();
             first = false;
@@ -419,19 +564,13 @@ void loop() {
         }
         else {
             if (first) {
-                screen_print("Waiting GPS lock\n");
-                first = false;
+                screen_print("Waiting GPS and IO lock \n");
+                first = false;           
             }
-
-            #ifdef GPS_WAIT_FOR_LOCK
-            if (millis() > GPS_WAIT_FOR_LOCK) {
-                sleep();
-            }
-            #endif
-
             // No GPS lock yet, let the OS put the main CPU in low power mode for 100ms (or until another interrupt comes in)
             // i.e. don't just keep spinning in loop as fast as we can.
             delay(100);
         }
     }
+
 }
