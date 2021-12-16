@@ -71,7 +71,7 @@ void ttn_register(void (*callback)(uint8_t message));
 #define REQUIRE_RADIO           true            // If true, we will fail to start if the radio is not found
 
 // If not defined, we will wait for lock forever
-#define GPS_WAIT_FOR_LOCK       (10 * 1000)     // Wait after every boot for GPS lock (may need longer than 5s because we turned the gps off during deep sleep)
+#define GPS_WAIT_FOR_LOCK       (60 * 1000)     // Wait after every boot for GPS lock (may need longer than 5s because we turned the gps off during deep sleep)
 
 // -----------------------------------------------------------------------------
 // DEBUG
