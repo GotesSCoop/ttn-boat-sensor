@@ -1,6 +1,7 @@
 .pio
 main/credentials.h
 credentials-private.h
+gotes-readme
 
 # ignore vscode IDE settings files
 .vscode/*
