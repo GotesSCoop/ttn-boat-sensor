@@ -33,5 +33,5 @@ WIP
 
 # Electrical diagram
 
-![](img/home/joan/Baixades/block_diagram.jpg)
+![block](img/block_diagram.jpg)
 
