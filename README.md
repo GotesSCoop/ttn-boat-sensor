@@ -36,6 +36,7 @@ Check list:
 - Powerbank or battery shield (optional, only intended for more battery life) 
 - GPS Antenna (optional)
 - USB cables
+- 10k Ohms resistor and small PCB
 
 ## Software dependencies
 
@@ -55,6 +56,8 @@ Example of case mount:
 
 ![Case mount](img/fullcase.jpg)
 
+Some considerations:
+
 **Din Rail**. Optional, but consider having things well fixed.
 
 **Power**. You may connect a powerbank or some kind of extra battery to the board if needed. Only one 18650 battery may not be enough.
@@ -65,14 +68,14 @@ Example of case mount:
 
 **SMA connections**. Drilled small holes to the top of the case to screw SMA females. This way you can unmount the case when needed without removing all the cable all along the boat.
 
-**Bilge switch resistor**. Added a small resistor soldered in a protoboard for the bilge switch.
+**Bilge switch resistor**. Added a 10k Ohms resistor soldered on a small chunk of PCB for the bilge switch.
 
 **DHT22**. Place it outside the box so it gets the real environment values!
 
 ### Program flow
-The program simply loops and takes a deep sleep and wakes up as specified in the SEND_INTERVAL. When waking up the program initializes all peripherals and checks if it's connected to the main power. The program checks if we are connected to the main power and if so waits for the GPS for GPS_WAIT_FOR_LOCK seconds. If it is not connected to the main power it won't wait for the GPS and simply will send the LoRa packet instantly.
+The program simply loops and takes a deep sleep and wakes up as specified in the `SEND_INTERVAL`. When waking up the program initializes all peripherals and checks if it's connected to the main power. The program checks if we are connected to the main power and if so waits for the GPS for `GPS_WAIT_FOR_LOCK` seconds. If it is not connected to the main power it won't wait for the GPS and simply will send the LoRa packet instantly.
 
-To calculate the deep sleep time substracts the GPS_WAIT_FOR_LOCK value to SEND_INTERVAL.
+To calculate the deep sleep time substracts the `GPS_WAIT_FOR_LOCK` value to `SEND_INTERVAL`.
 
 ### LoRa Packet structure
 
@@ -100,7 +103,7 @@ Where:
 
 ### Pinout
 
-Not all pins from the board TTGO T-Beam work so we had to find the ones available. In fact a lot of them are wired to other peripherals.
+Not all pins from the board TTGO T-Beam work so we had to find the ones available. In fact a lot of them are wired to board peripherals like GPS module or LoRa, so they are not easy to change or expand.
 
 - Pin VP or 36: voltage sensor
 - Pin 13: DHT22 sensor
