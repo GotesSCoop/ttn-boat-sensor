@@ -12,7 +12,6 @@ This project intends to create a boat LoRa sensor station to get several metrics
 
 Then the program sends all these variables via TTN.
 
-
 To save power we're doing some logic. Apart from tuning the deep sleep time it will only get and send GPS data if we're connected to the main power. We're doing this to prevent GPS to drain the battery too quickly, as waiting for the GPS to be ready consumes a lot of time.
 
 This sensor station will be placed inside a boat, so its enclosure must be water and corrosion resistant. It must be also well fixed to the boat so it does not move or fall when sailing, as it could cause several damage to other components of the boat. Space in boats is limited, so it must be easy to unmount (we don't want to remove meters of cable inside the bilge if we have to remove it temporally). In addition, two antennas will be placed on top of the mast, because GPS and LoRa signals may be blocked or attenuated by the deck.
@@ -50,6 +49,20 @@ Install Arduino IDE and libraries listed in https://github.com/kizniche/ttgo-tbe
 
 ## Design
 
+### Mounting considerations
+
+Example of case mount:
+
+![Case mount](img/fullcase.jpg)
+
+**Din Rail**. Optional, but consider having things well fixed.
+**Power**. You may connect a powerbank or some kind of extra battery to the board if needed. Only one 18650 battery may not be enough.
+**Reset buttons**. Installed some reset buttons outside the plastic case so resetting the board and the future powerbanks is easier.
+**Power distribution**. Added power distribution blocks on DIN rails to avoid cable joints.
+**SMA connections**. Drilled small holes to the top of the case to screw SMA females. This way you can unmount the case when needed without removing all the cable all along the boat.
+**Bilge switch resistor**. Added a small resistor soldered in a protoboard for the bilge switch.
+**DHT22**. Place it outside the box so it gets the real environment values!
+
 ### Program flow
 The program simply loops and takes a deep sleep and wakes up as specified in the SEND_INTERVAL. When waking up the program initializes all peripherals and checks if it's connected to the main power. The program checks if we are connected to the main power and if so waits for the GPS for GPS_WAIT_FOR_LOCK seconds. If it is not connected to the main power it won't wait for the GPS and simply will send the LoRa packet instantly.
 
@@ -81,10 +94,17 @@ Where:
 
 ### Pinout
 
-# Board mount
+Not all pins from the board TTGO T-Beam work so we had to find the ones available. In fact a lot of them are wired to other peripherals.
 
+- Pin VP or 36: voltage sensor
+- Pin 13: DHT22 sensor
+- Pin 15: Bilge switch pin: 
+- Pin Rst: Reset button
+
+# Mounting the case on the boat
+
+Still WIP!
 
 # Electrical diagram
-
 ![block](img/block_diagram.jpg)
 
