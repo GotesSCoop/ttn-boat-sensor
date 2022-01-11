@@ -35,17 +35,15 @@ Check list:
 
 - LoRa Board [TTGO Lora T-BEAM V1.1](https://www.aliexpress.com/item/32875743018.html)
 - Float switch [like this one](https://www.aliexpress.com/item/33004754249.html)
-- DHT-22 humidity and temperature sensor
+- [DHT-22 humidity and temperature sensor](https://es.aliexpress.com/item/32901733917.html)
 - Arduino [voltage sensor](https://www.aliexpress.com/item/1005002235375607.html)
-- 12V-24V to USB converter.
+- [12V-24V to USB converter](https://www.amazon.es/TECNOIOT-6-24V-Module-DC-DC-Converter/dp/B07JLTTZXL)
 - Plastic or fiber case of at least 28x35cm
-- Din rail
+- Din rail (recommended)
 - Li-ION Rechargeable batteries (one at least)
-- SMA Male to Female Pigtals.
-- Wiring cable, connectors, zip ties...
+- SMA Male to Female Pigtals and cables.
+- USB cables, wiring cable, connectors, zip ties...
 - Powerbank or battery shield (optional, only intended for more battery life) 
-- GPS Antenna (optional)
-- USB cables
 - 10k Ohms resistor and small PCB
 
 # Software dependencies
