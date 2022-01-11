@@ -21,11 +21,13 @@ This project intends to create a boat LoRa sensor station to get several metrics
 
 Then the program sends all these variables via TTN.
 
-To save power we're doing some logic. Apart from tuning the deep sleep time it will only get and send GPS data if we're connected to the main power. We're doing this to prevent GPS to drain the battery too quickly, as waiting for the GPS to be ready consumes a lot of time.
+## Specific requeriments
 
 This sensor station will be placed inside a boat, so its enclosure must be water and corrosion resistant. It must be also well fixed to the boat so it does not move or fall when sailing, as it could cause several damage to other components of the boat. Space in boats is limited, so it must be easy to unmount (we don't want to remove meters of cable inside the bilge if we have to remove it temporally). In addition, two antennas will be placed on top of the mast, because GPS and LoRa signals may be blocked or attenuated by the deck.
 
 The main electrical components will be detached from the main battery of the boat because it must be working all the time and we don't want it to eventually drain the battery of the boat. For this reason electronics will use a different power source, so we have also to be sure that electronics use as little power as possible. Anyway, when the battery of the boat is connected, it will charge the batteries of the electronics.
+
+To save power we need to do some logic. Apart from tuning the deep sleep time it will only get and send GPS data if we're connected to the main power. We're doing this to prevent GPS to drain the battery too quickly, as waiting for the GPS to be ready consumes a lot of time.
 
 # Hardware list
 
