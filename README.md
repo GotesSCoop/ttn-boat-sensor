@@ -56,11 +56,17 @@ Example of case mount:
 ![Case mount](img/fullcase.jpg)
 
 **Din Rail**. Optional, but consider having things well fixed.
+
 **Power**. You may connect a powerbank or some kind of extra battery to the board if needed. Only one 18650 battery may not be enough.
+
 **Reset buttons**. Installed some reset buttons outside the plastic case so resetting the board and the future powerbanks is easier.
+
 **Power distribution**. Added power distribution blocks on DIN rails to avoid cable joints.
+
 **SMA connections**. Drilled small holes to the top of the case to screw SMA females. This way you can unmount the case when needed without removing all the cable all along the boat.
+
 **Bilge switch resistor**. Added a small resistor soldered in a protoboard for the bilge switch.
+
 **DHT22**. Place it outside the box so it gets the real environment values!
 
 ### Program flow
