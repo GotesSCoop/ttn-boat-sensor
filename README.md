@@ -8,7 +8,7 @@ This project intends to create a boat LoRa sensor station to get several metrics
 * Whether the battery of the boat is turned on
 * Humidity and temperature
 * GPS position
-* Status of a float switch. A floating switch is placed at the bottom of the bilge.
+* Status of a float switch. A floating switch is placed at the bottom of the bilge to detect if there's a huge amount of water and needs attention.
 
 Then the program sends all these variables via TTN.
 
