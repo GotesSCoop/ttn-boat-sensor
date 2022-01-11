@@ -1,9 +1,9 @@
 # TTN Boat Sensor
 
-- [Introduction](#Introduction)
-- [Hardware list](#Hardware list)
-- [Sofware dependencies](#Software dependencies)
-- [Design](#Design)
+- [Introduction](#introduction)
+- [Hardware list](#hardware-list)
+- [Sofware dependencies](#software-dependencies)
+- [Design](#design)
 
 
 # Introduction
