@@ -1,5 +1,13 @@
 # TTN Boat Sensor
 
+- [Introduction](#Introduction)
+- [Hardware list](#Hardware list)
+- [Sofware dependencies](#Software dependencies)
+- [Design](#Design)
+
+
+# Introduction
+
 Project forked from https://github.com/kizniche/ttgo-tbeam-ttn-tracker.
 
 This project intends to create a boat LoRa sensor station to get several metrics and send them via TTN. In this release the sensor station gathers and sends the following variables:
@@ -18,8 +26,7 @@ This sensor station will be placed inside a boat, so its enclosure must be water
 
 The main electrical components will be detached from the main battery of the boat because it must be working all the time and we don't want it to eventually drain the battery of the boat. For this reason electronics will use a different power source, so we have also to be sure that electronics use as little power as possible. Anyway, when the battery of the boat is connected, it will charge the batteries of the electronics.
 
-
-## Hardware
+# Hardware list
 
 Check list:
 
@@ -38,7 +45,7 @@ Check list:
 - USB cables
 - 10k Ohms resistor and small PCB
 
-## Software dependencies
+# Software dependencies
 
 Install Arduino IDE and libraries listed in https://github.com/kizniche/ttgo-tbeam-ttn-tracker:
 
@@ -48,9 +55,9 @@ Install Arduino IDE and libraries listed in https://github.com/kizniche/ttgo-tbe
 - lewisxhe/AXP202X_Library (for Rev1 only)
 - Only if you want to add the OLED SSD screen: ThingPulse/esp8266-oled-ssd1306 (for Rev0 and Rev1)
 
-## Design
+# Design
 
-### Mounting considerations
+## Mounting considerations
 
 Example of case mount:
 
@@ -72,12 +79,12 @@ Some considerations:
 
 **DHT22**. Place it outside the box so it gets the real environment values!
 
-### Program flow
+## Program flow
 The program simply loops and takes a deep sleep and wakes up as specified in the `SEND_INTERVAL`. When waking up the program initializes all peripherals and checks if it's connected to the main power. The program checks if we are connected to the main power and if so waits for the GPS for `GPS_WAIT_FOR_LOCK` seconds. If it is not connected to the main power it won't wait for the GPS and simply will send the LoRa packet instantly.
 
 To calculate the deep sleep time substracts the `GPS_WAIT_FOR_LOCK` value to `SEND_INTERVAL`.
 
-### LoRa Packet structure
+## LoRa Packet structure
 
 LoRa Packet structure takes only 9 bytes (1 unused) and is as follows:
 
@@ -101,7 +108,7 @@ Where:
 - S is whether the bilge switch is on.
 - Btt voltage is the voltage of the boat battery
 
-### Pinout
+## Pinout
 
 Not all pins from the board TTGO T-Beam work so we had to find the ones available. In fact a lot of them are wired to board peripherals like GPS module or LoRa, so they are not easy to change or expand.
 
