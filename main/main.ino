@@ -51,7 +51,7 @@ esp_sleep_source_t wakeCause;  // the reason we booted this time
 // Application
 // -----------------------------------------------------------------------------
 
-//void buildPacket(uint8_t txBuffer[]);  // needed for platformio
+float battVolt;
 
 void buildPacket(uint8_t txBuffer[10])
 /*
@@ -83,20 +83,20 @@ void buildPacket(uint8_t txBuffer[10])
 
     uint16_t vsens1 = 0;
     uint16_t vsens2 = 0;
-    float vOUT1;
-    float vOUT2;
-    float vIN1;
-    float vIN2;
     uint8_t battBinary;
     uint8_t battOn;
     
     char t[32]; // used to sprintf for Serial output
 
+    // Battery
+    battBinary = uint8_t(battVolt * 10);
+    if (isBattConnected(battVolt)) battOn = 1; else battOn=0;
+    
     // GPS
     LatitudeBinary = ((gps_latitude() + 90) / 180.0) * 16777215;
     LongitudeBinary = ((gps_longitude() + 180) / 360.0) * 16777215;
     switch_status = digitalRead(SWITCH_PIN);
-    if (gps_hdop() < 50.0) gpsValid = 1; else gpsValid = 0;
+    if ((gps_hdop() < 50.0) and isBattConnected(battVolt)) gpsValid = 1; else gpsValid = 0;
 
     // DHT22
     humidity = dht.readHumidity();
@@ -104,37 +104,8 @@ void buildPacket(uint8_t txBuffer[10])
     temp = dht.readTemperature();
     tempBinary = (uint8_t)(round(temp)-lowesttemp);
 
-    // BATTERY VOLTAGE SENSORS
-
-    // First calculate received voltages for both sensors
-    for (uint8_t i = 0; i < 3; i++) {
-       vsens1 = vsens1 + analogRead(VSENS1PIN);
-    }
-    vOUT1 = (vsens1 * 1.1) / 4095; 
-    // Formula should be: (vsens1 * 3.3) / (4095 * 3)
-    // vsens1 should be divided by 3 to get average value
-    
-    for (uint8_t i = 0; i < 3; i++) {
-       vsens2 = vsens2 + analogRead(VSENS2PIN);
-    }
-    vOUT2 = (vsens2 * 1.1) / 4095; 
-
-    // Calculate real voltages
-    vIN1 = vOUT1 / (VSENS_R2/(VSENS_R1+VSENS_R2));
-    vIN2 = vOUT2 / (VSENS_R2/(VSENS_R1+VSENS_R2));
-
-    //If vIN2 is below threshold we consider battery is OFF.
-    if (vIN2 < BATT_OFF_THRESHOLD ) {
-      battOn = 0;
-    } else {
-      battOn = 1;
-    }
-
-    //Battery voltage binary
-    battBinary = uint8_t(vIN1 * 10);
-
     // DEBUG
-    sprintf(t, "Valid: %d", gpsValid);
+    sprintf(t, "GPS Valid: %d", gpsValid);
     Serial.println(t);
     sprintf(t, "Lat: %f", gps_latitude());
     Serial.println(t);
@@ -150,9 +121,7 @@ void buildPacket(uint8_t txBuffer[10])
     Serial.println(t);  
     sprintf(t, "Temperature: %f", temp);
     Serial.println(t);
-    sprintf(t, "Voltage sensor 1 IN : %f",  vIN1);
-    Serial.println(t);    
-    sprintf(t, "Voltage sensor 2 IN : %f",  vIN2);
+    sprintf(t, "Voltage sensor 1 IN : %f",  battVolt);
     Serial.println(t);  
     sprintf(t, "Batt Binary: %i", battBinary);
     Serial.println(t);  
@@ -178,7 +147,6 @@ void buildPacket(uint8_t txBuffer[10])
     
 }
 
-
 /**
  * If we have a valid position send it to the server.
  * @return true if we decided to send.
@@ -188,7 +156,7 @@ bool trySend() {
     char buffer[40];
     
     // Check if we send GPS data, only switch data, or both
-    if (isGPSReady()){
+    if (isGPSReady() or isBattConnected(battVolt)==false){
       Serial.println("Gps wait done");
       snprintf(buffer, sizeof(buffer), "Latitude: %10.6f\n", gps_latitude());
       screen_print(buffer);
@@ -469,8 +437,15 @@ void setup()
 
     if (ssd1306_found) screen_setup();
 
+    // Get battery status
+    battVolt=getBoatBatt(VSENS2PIN);
+
     // Init GPS
-    gps_setup();
+    // Only initGPS if we're connected to power source
+    if (isBattConnected(battVolt)) {
+       Serial.println("Connected to power source. Init GPS");
+       gps_setup();
+    }
 
     // Show logo on first boot after removing battery
     #ifndef ALWAYS_SHOW_LOGO
@@ -502,10 +477,16 @@ void setup()
 
     pinMode(SWITCH_PIN, INPUT);
 
+   
+
 }
 
 void loop() {
-    gps_loop();
+  
+    if (isBattConnected(battVolt)){
+       gps_loop();
+    }
+    
     ttn_loop();
     screen_loop();
 

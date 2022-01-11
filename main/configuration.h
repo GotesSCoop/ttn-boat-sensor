@@ -104,7 +104,7 @@ void ttn_register(void (*callback)(uint8_t message));
 #define BUTTON_PIN      39
 #elif defined(T_BEAM_V10)
 #define BUTTON_PIN      38
-#define LED_PIN         4
+//#define LED_PIN         4
 #endif
 
 // GOTES IO
@@ -124,8 +124,8 @@ void ttn_register(void (*callback)(uint8_t message));
 // -----------------------------------------------------------------------------
 // SENS1: battery voltage level
 // SENS2: is battery connected
-#define VSENS1PIN 36 //VN
-#define VSENS2PIN 39 //VP
+//#define VSENS1PIN 39 //VN
+#define VSENS2PIN 36 //VP
 #define VSENS_R1 30000.0
 #define VSENS_R2 7500.0
 #define BATT_OFF_THRESHOLD 5.0
