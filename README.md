@@ -4,6 +4,7 @@
 - [Hardware list](#hardware-list)
 - [Sofware dependencies](#software-dependencies)
 - [Design](#design)
+- [Electrical diagram](#electrical-diagram)
 
 
 # Introduction
