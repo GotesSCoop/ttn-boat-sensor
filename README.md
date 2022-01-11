@@ -16,16 +16,20 @@ The main electrical components will be detached from the main battery of the boa
 
 ## Components
 
-* [TTGO Lora T-BEAM V1.1] (https://www.aliexpress.com/item/32875743018.html)
-* Float switch [like this one] (https://www.aliexpress.com/item/33004754249.html)
+* [TTGO Lora T-BEAM V1.1](https://www.aliexpress.com/item/32875743018.html)
+* Float switch [like this one](https://www.aliexpress.com/item/33004754249.html)
 * DHT-22 humidity and temperature sensor
-* 2x Arduino [voltage sensor](https://www.aliexpress.com/item/1005002235375607.html)
+* Arduino [voltage sensor](https://www.aliexpress.com/item/1005002235375607.html)
 * 12V-24V to USB converter.
-* Powerbank or battery shield (optional, only intended for more battery life) 
 * Plastic or fiber case of at least 28x35cm
 * Din rail
-* Li-ION Rechargeable batteries
-* Cable, connectors, zip ties...
+* Li-ION Rechargeable batteries (one at least)
+* SMA Male to Female Pigtals.
+* Wiring cable, connectors, zip ties...
+
+* Powerbank or battery shield (optional, only intended for more battery life) 
+* GPS Antenna (optional)
+
 
 # Software
 
