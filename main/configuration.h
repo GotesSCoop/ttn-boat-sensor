@@ -34,8 +34,8 @@ void ttn_register(void (*callback)(uint8_t message));
 // Version
 // -----------------------------------------------------------------------------
 
-#define APP_NAME                "TTN MAP-TRACK"
-#define APP_VERSION             "1.2.1"
+#define APP_NAME                "FRANCESC XAVIER"
+#define APP_VERSION             "1.0"
 
 // -----------------------------------------------------------------------------
 // Configuration
@@ -52,7 +52,7 @@ void ttn_register(void (*callback)(uint8_t message));
 #define ALWAYS_SHOW_LOGO
 
 //Uncomment to enable discarding network settings by long pressing second button
-//#define PREFS_DISCARD
+#define PREFS_DISCARD
 
 // If you are having difficulty sending messages to TTN after the first successful send,
 // uncomment the next option and experiment with values (~ 1 - 5)
@@ -61,7 +61,7 @@ void ttn_register(void (*callback)(uint8_t message));
 #define DEBUG_PORT              Serial          // Serial debug port
 #define SERIAL_BAUD             115200          // Serial debug baud rate
 #define SLEEP_BETWEEN_MESSAGES  true           // Do sleep between messages
-#define SEND_INTERVAL           (300 * 1000)     // Sleep for these many millis
+#define SEND_INTERVAL           (300 * 1000)     // Sleep for these many millis. 300
 #define MESSAGE_TO_SLEEP_DELAY  5000            // Time after message before going to sleep
 #define LOGO_DELAY              5000            // Time to show logo on first boot
 #define LORAWAN_PORT            10              // Port the messages will be sent to
@@ -72,7 +72,7 @@ void ttn_register(void (*callback)(uint8_t message));
 
 // If not defined, we will wait for lock forever
 #define GPS_WAIT_FOR_LOCK       (60 * 1000)     // Wait after every boot for GPS lock (may need longer than 5s because we turned the gps off during deep sleep)
-
+//60
 // -----------------------------------------------------------------------------
 // DEBUG
 // -----------------------------------------------------------------------------

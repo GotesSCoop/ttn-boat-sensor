@@ -41,21 +41,40 @@ void _screen_header() {
     display->setTextAlignment(TEXT_ALIGN_LEFT);
     display->drawString(0, 2, buffer);
 
-    // Datetime (if the axp192 PMIC is present, alternate between powerstats and time)
-    if(axp192_found && millis()%8000 < 3000){
-        snprintf(buffer, sizeof(buffer), "%.1fV %.0fmA", axp.getBattVoltage()/1000, axp.getBattChargeCurrent() - axp.getBattDischargeCurrent());
-
-    } else {
-        gps_time(buffer, sizeof(buffer));
+    // if battery is connected we print voltage, time, temperature and humidity
+    if (batt_connected) {
+      if (axp192_found && millis()%12000 < 3000) {
+            snprintf(buffer, sizeof(buffer), "%.1fV %.0fmA", axp.getBattVoltage()/1000, axp.getBattChargeCurrent() - axp.getBattDischargeCurrent());
+      }else if(axp192_found && millis()%12000 > 3000 && millis()%12000 < 6000){
+            snprintf(buffer, sizeof(buffer), "%.0fºC %.0f%%",temp,humidity);
+      }else{
+            gps_time(buffer, sizeof(buffer));
+      }
+            
     }
+    // if battery is not connected we only print voltage, temperature and humidity
+    if (! batt_connected) {
+        display->setTextAlignment(TEXT_ALIGN_RIGHT);
+        display->drawString(display->getWidth() - SATELLITE_IMAGE_WIDTH - 4, 2, itoa(gps_sats(), buffer, 10));
+        
+      if (axp192_found && millis()%2000 < 1000) {
+            snprintf(buffer, sizeof(buffer), "%.1fV %.0fmA", axp.getBattVoltage()/1000, axp.getBattChargeCurrent() - axp.getBattDischargeCurrent());
+      }else{
+            snprintf(buffer, sizeof(buffer), "%.0fºC %.0f%%",temp,humidity);
+      }
+            
+    }
+       
     
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     display->drawString(display->getWidth()/2, 2, buffer);
 
     // Satellite count
-    display->setTextAlignment(TEXT_ALIGN_RIGHT);
-    display->drawString(display->getWidth() - SATELLITE_IMAGE_WIDTH - 4, 2, itoa(gps_sats(), buffer, 10));
-    display->drawXbm(display->getWidth() - SATELLITE_IMAGE_WIDTH, 0, SATELLITE_IMAGE_WIDTH, SATELLITE_IMAGE_HEIGHT, SATELLITE_IMAGE);
+    if (batt_connected) {
+        display->setTextAlignment(TEXT_ALIGN_RIGHT);
+        display->drawString(display->getWidth() - SATELLITE_IMAGE_WIDTH - 4, 2, itoa(gps_sats(), buffer, 10));
+        display->drawXbm(display->getWidth() - SATELLITE_IMAGE_WIDTH, 0, SATELLITE_IMAGE_WIDTH, SATELLITE_IMAGE_HEIGHT, SATELLITE_IMAGE);
+    }
 }
 
 void screen_show_logo() {

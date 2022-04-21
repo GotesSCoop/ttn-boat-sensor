@@ -236,7 +236,6 @@ static void initCount() {
   }
 }
 
-
 bool ttn_setup() {
     initCount();
 
@@ -341,7 +340,8 @@ void ttn_join() {
             // channels; ensure it uses the one we want
             LMIC.txChnl = SINGLE_CHANNEL_GATEWAY;
         #endif
-
+        Serial.printf("Count: %i\n", count);
+    
         Preferences p;
         p.begin("lora", true); // we intentionally ignore failure here
         uint32_t netId = p.getUInt("netId", UINT32_MAX);

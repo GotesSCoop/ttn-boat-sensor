@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 float isBattConnected(float vIN) {
   //If vIN is below threshold we consider battery is OFF.
-  return (vIN > BATT_OFF_THRESHOLD) ;
+  return (vIN > BATT_OFF_THRESHOLD) ;  
 }
 
 float getBoatBatt(int pin) {

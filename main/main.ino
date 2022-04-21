@@ -40,6 +40,11 @@ bool ssd1306_found = false;
 bool axp192_found = false;
 
 bool packetSent, packetQueued;
+bool batt_connected = false;
+
+float humidity;
+float temp;
+uint8_t switch_status;
 
 static uint8_t txBuffer[10];
 
@@ -72,13 +77,11 @@ void buildPacket(uint8_t txBuffer[10])
     uint32_t LongitudeBinary;
     uint8_t hdopGps;
     uint8_t sats;
-    uint8_t switch_status;
+    
     uint8_t gpsValid;
 
     uint8_t humidityBinary;
     uint8_t tempBinary;
-    float humidity;
-    float temp;
     float lowesttemp = -5;
 
     uint16_t vsens1 = 0;
@@ -90,18 +93,16 @@ void buildPacket(uint8_t txBuffer[10])
 
     // Battery
     battBinary = uint8_t(battVolt * 10);
-    if (isBattConnected(battVolt)) battOn = 1; else battOn=0;
+    if (batt_connected) battOn = 1; else battOn=0;
     
     // GPS
     LatitudeBinary = ((gps_latitude() + 90) / 180.0) * 16777215;
     LongitudeBinary = ((gps_longitude() + 180) / 360.0) * 16777215;
-    switch_status = digitalRead(SWITCH_PIN);
-    if ((gps_hdop() < 50.0) and isBattConnected(battVolt)) gpsValid = 1; else gpsValid = 0;
+    
+    if ((gps_hdop() < 50.0) and batt_connected) gpsValid = 1; else gpsValid = 0;
 
-    // DHT22
-    humidity = dht.readHumidity();
+    // DHT22     
     humidityBinary = (uint8_t)round(humidity);
-    temp = dht.readTemperature();
     tempBinary = (uint8_t)(round(temp)-lowesttemp);
 
     // DEBUG
@@ -156,14 +157,14 @@ bool trySend() {
     char buffer[40];
     
     // Check if we send GPS data, only switch data, or both
-    if (isGPSReady() or isBattConnected(battVolt)==false){
-      Serial.println("Gps wait done");
-      snprintf(buffer, sizeof(buffer), "Latitude: %10.6f\n", gps_latitude());
-      screen_print(buffer);
-      snprintf(buffer, sizeof(buffer), "Longitude: %10.6f\n", gps_longitude());
-      screen_print(buffer);
-      snprintf(buffer, sizeof(buffer), "Error: %4.2fm\n", gps_hdop());
-      screen_print(buffer);
+    if (isGPSReady() or batt_connected==false){
+      if (batt_connected == true){
+        Serial.println("Gps wait done");
+        snprintf(buffer, sizeof(buffer), "Latitude: %10.6f\n", gps_latitude());
+        screen_print(buffer);
+        snprintf(buffer, sizeof(buffer), "Longitude: %10.6f\n", gps_longitude());
+        screen_print(buffer);
+      }
       
       #if LORAWAN_CONFIRMED_EVERY > 0
         bool confirmed = (ttn_get_count() % LORAWAN_CONFIRMED_EVERY == 0);
@@ -171,9 +172,7 @@ bool trySend() {
       #else
         bool confirmed = false;
       #endif
-    
-      screen_print(buffer);       
-      
+            
       buildPacket(txBuffer);
       packetQueued = true;
       ttn_send(txBuffer, sizeof(txBuffer), LORAWAN_PORT, confirmed);
@@ -431,11 +430,7 @@ void setup()
     // Hello
     DEBUG_MSG(APP_NAME " " APP_VERSION "\n");
 
-    // Don't init display if we don't have one or we are waking headless due to a timer event
-    if (wakeCause == ESP_SLEEP_WAKEUP_TIMER)
-        ssd1306_found = false;	// forget we even have the hardware
 
-    if (ssd1306_found) screen_setup();
 
     // Get battery status
     battVolt=getBoatBatt(VSENS2PIN);
@@ -444,12 +439,20 @@ void setup()
     // Only initGPS if we're connected to power source
     if (isBattConnected(battVolt)) {
        Serial.println("Connected to power source. Init GPS");
+       batt_connected = true;
        gps_setup();
     }
+   
+
+    // Don't init display if we don't have one or we are waking headless due to a timer event
+    if (wakeCause == ESP_SLEEP_WAKEUP_TIMER)
+        ssd1306_found = false;  // forget we even have the hardware
+
+    if (ssd1306_found) screen_setup();    
 
     // Show logo on first boot after removing battery
     #ifndef ALWAYS_SHOW_LOGO
-    if (bootCount == 0) {
+    if (bootCount == 1) {
     #endif
         screen_print(APP_NAME " " APP_VERSION, 0, 0);
         screen_show_logo();
@@ -458,7 +461,6 @@ void setup()
     #ifndef ALWAYS_SHOW_LOGO
     }
     #endif
-
     // TTN setup
     if (!ttn_setup()) {
         screen_print("[ERR] Radio module not found!\n");
@@ -477,7 +479,18 @@ void setup()
 
     pinMode(SWITCH_PIN, INPUT);
 
-   
+    // get sensor values at the beggining to print it on screen
+    humidity = dht.readHumidity();
+    temp = dht.readTemperature();
+    switch_status = digitalRead(SWITCH_PIN);
+    
+    char buffer[40];
+    if (switch_status == 0) {
+        snprintf(buffer, sizeof(buffer), "Switch OFF. Btt volt %.1fv\n", battVolt);
+    } else {
+      snprintf(buffer, sizeof(buffer), "Switch ON! Btt volt %.1fv\n", battVolt);
+    }
+    screen_print(buffer);
 
 }
 
@@ -485,6 +498,7 @@ void loop() {
   
     if (isBattConnected(battVolt)){
        gps_loop();
+       batt_connected = true;
     }
     
     ttn_loop();
@@ -553,5 +567,4 @@ void loop() {
             delay(100);
         }
     }
-
 }
